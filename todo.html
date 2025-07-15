@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>To-Do List Web App</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
+      color: #fff;
+    }
+
+    h2 {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .container {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      padding: 20px;
+    }
+
+    .form-section, .tasks-section {
+      background: #fff;
+      color: #333;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 10px;
+      min-width: 300px;
+      max-width: 500px;
+      flex: 1;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .save-btn {
+      background: #28a745;
+      color: #fff;
+    }
+
+    .edit-btn {
+      background: #ffc107;
+      color: #333;
+    }
+
+    .delete-btn {
+      background: #dc3545;
+      color: #fff;
+      margin-left: 10px;
+    }
+
+    .complete-btn {
+      background: #007bff;
+      color: #fff;
+      margin-left: 10px;
+    }
+
+    .task {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .task strong {
+      display: block;
+    }
+
+    .task-time {
+      font-size: 0.8rem;
+      color: #555;
+    }
+
+    .task-actions {
+      margin-top: 10px;
+    }
+
+    .title-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>To-Do List Web App</h2>
+  <div class="container">
+    <!-- Form Section -->
+    <div class="form-section">
+      <form id="task-form">
+        <input type="text" id="title" placeholder="Task Title" required>
+        <textarea id="description" rows="4" placeholder="Task Description" required></textarea>
+        <button type="submit" class="save-btn">Save Task</button>
+      </form>
+    </div>
+
+    <!-- Pending Tasks -->
+    <div class="tasks-section">
+      <h3>Pending Tasks</h3>
+      <div id="pending-tasks"></div>
+    </div>
+
+    <!-- Completed Tasks -->
+    <div class="tasks-section">
+      <h3>Completed Tasks</h3>
+      <div id="completed-tasks"></div>
+    </div>
+  </div>
+
+  <script>
+    let pendingTasks = [];
+    let completedTasks = [];
+
+    const form = document.getElementById('task-form');
+    const titleInput = document.getElementById('title');
+    const descInput = document.getElementById('description');
+    const pendingContainer = document.getElementById('pending-tasks');
+    const completedContainer = document.getElementById('completed-tasks');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = titleInput.value.trim();
+      const description = descInput.value.trim();
+      if (!title || !description) return;
+
+      const newTask = {
+        id: Date.now(),
+        title,
+        description,
+        timeAdded: new Date().toLocaleString()
+      };
+
+      pendingTasks.push(newTask);
+      renderTasks();
+      form.reset();
+    });
+
+    function renderTasks() {
+      // Pending
+      pendingContainer.innerHTML = '';
+      pendingTasks.forEach(task => {
+        const div = document.createElement('div');
+        div.className = 'task';
+        div.innerHTML = `
+          <div class="title-header">
+            <strong>${task.title}</strong>
+            <span class="task-time">${task.timeAdded}</span>
+          </div>
+          <div>${task.description}</div>
+          <div class="task-actions">
+            <button class="edit-btn" onclick="editTask(${task.id}, 'pending')">Edit</button>
+            <button class="complete-btn" onclick="completeTask(${task.id})">Mark as Done</button>
+            <button class="delete-btn" onclick="deleteTask(${task.id}, 'pending')">Delete</button>
+          </div>
+        `;
+        pendingContainer.appendChild(div);
+      });
+
+      // Completed
+      completedContainer.innerHTML = '';
+      completedTasks.forEach(task => {
+        const div = document.createElement('div');
+        div.className = 'task';
+        div.innerHTML = `
+          <div class="title-header">
+            <strong>${task.title}</strong>
+            <span class="task-time">${task.timeCompleted}</span>
+          </div>
+          <div>${task.description}</div>
+          <div class="task-actions">
+            <button class="edit-btn" onclick="editTask(${task.id}, 'completed')">Edit</button>
+            <button class="delete-btn" onclick="deleteTask(${task.id}, 'completed')">Delete</button>
+          </div>
+        `;
+        completedContainer.appendChild(div);
+      });
+    }
+
+    function deleteTask(id, type) {
+      if (type === 'pending') {
+        pendingTasks = pendingTasks.filter(task => task.id !== id);
+      } else {
+        completedTasks = completedTasks.filter(task => task.id !== id);
+      }
+      renderTasks();
+    }
+
+    function completeTask(id) {
+      const index = pendingTasks.findIndex(task => task.id === id);
+      if (index !== -1) {
+        const completed = { ...pendingTasks[index], timeCompleted: new Date().toLocaleString() };
+        completedTasks.push(completed);
+        pendingTasks.splice(index, 1);
+        renderTasks();
+      }
+    }
+
+    function editTask(id, type) {
+      let task;
+      if (type === 'pending') {
+        task = pendingTasks.find(t => t.id === id);
+      } else {
+        task = completedTasks.find(t => t.id === id);
+      }
+      if (task) {
+        titleInput.value = task.title;
+        descInput.value = task.description;
+        deleteTask(id, type);
+      }
+    }
+
+    renderTasks();
+  </script>
+
+</body>
+</html>
